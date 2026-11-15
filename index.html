@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SIPINTAR - Dasbor Guru + 3 Permainan 3D</title>
+  <title>SIPINTAR Terpadu - Dasbor Guru + 3 Permainan 3D</title>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -3461,7 +3461,56 @@ ZGEnLCdEYXNib3InKX0pOwogIG9wZW5HYW1lKCk7Cn0KfSkoKTsKCjwvc2NyaXB0Pgo8L2JvZHk+Cjwv
     };
     const fmtTime = (s) => { s = Math.round(s || 0); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
     const avg = (arr) => (arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0);
-    const newRoomId = () => 'sip-' + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-3);
+
+    const LOGO_SOURCES = ['logo.png', 'https://i.imgur.com/vbpWkFn.png', 'https://images.weserv.nl/?url=i.imgur.com/vbpWkFn.png', 'https://wsrv.nl/?url=i.imgur.com/vbpWkFn.png'];
+    function SipLogo({ className, alt, canUpload }) {
+      const [up, setUp] = useState(() => loadLS('logoData', ''));
+      const [idx, setIdx] = useState(() => { if (loadLS('logoData', '')) return 0; const i = Number(loadLS('logoIdx', 0)); return i >= 0 && i < LOGO_SOURCES.length ? i : 0; });
+      useEffect(() => {
+        const h = () => { setUp(loadLS('logoData', '')); setIdx(0); };
+        window.addEventListener('sipintar-logo', h);
+        return () => window.removeEventListener('sipintar-logo', h);
+      }, []);
+      const list = up ? [up, ...LOGO_SOURCES] : LOGO_SOURCES;
+      const onFile = (e) => {
+        const f = e.target.files && e.target.files[0]; if (!f) return;
+        const fr = new FileReader();
+        fr.onload = () => {
+          const im = new Image();
+          im.onload = () => {
+            const s = Math.min(1, 256 / Math.max(im.width, im.height));
+            const c = document.createElement('canvas'); c.width = Math.round(im.width * s); c.height = Math.round(im.height * s);
+            c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+            saveLS('logoData', c.toDataURL('image/png')); saveLS('logoIdx', 0);
+            window.dispatchEvent(new Event('sipintar-logo'));
+          };
+          im.src = fr.result;
+        };
+        fr.readAsDataURL(f);
+      };
+      if (idx >= list.length) {
+        return (
+          <div className={className + ' relative flex items-center justify-center'}>
+            <svg viewBox="0 0 100 100" className="w-full h-full">
+              <defs><linearGradient id="slg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fbbf24" /><stop offset="1" stopColor="#f97316" /></linearGradient></defs>
+              <rect x="6" y="6" width="88" height="88" rx="22" fill="url(#slg)" stroke="#fde68a" strokeWidth="4" />
+              <path d="M50 22l8.5 17.5 19.2 2.7-13.9 13.5 3.3 19.1L50 66l-17.1 8.8 3.3-19.1-13.9-13.5 19.2-2.7z" fill="#1e1b4b" />
+            </svg>
+            {canUpload && (
+              <label className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold text-indigo-200 underline cursor-pointer">
+                📷 Unggah logo<input type="file" accept="image/*" className="hidden" onChange={onFile} />
+              </label>
+            )}
+          </div>
+        );
+      }
+      return (
+        <img src={list[idx]} alt={alt} referrerPolicy="no-referrer" className={className} draggable={false}
+          onLoad={() => { if (!up || idx > 0) saveLS('logoIdx', up ? idx - 1 : idx); }}
+          onError={() => setIdx((i) => i + 1)} />
+      );
+    }
+        const newRoomId = () => 'sip-' + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-3);
     const roomFromHash = (h) => { const m = (h || '').match(/^#siswa\/([\w-]+)$/); return m ? m[1] : ''; };
 
     // ==========================================
@@ -4524,7 +4573,7 @@ ZGEnLCdEYXNib3InKX0pOwogIG9wZW5HYW1lKCk7Cn0KfSkoKTsKCjwvc2NyaXB0Pgo8L2JvZHk+Cjwv
               <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="max-w-2xl space-y-1.5">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-950/40 backdrop-blur-md text-amber-300 border border-amber-400/40 text-[11px] font-bold tracking-wide uppercase">
-                    <img src="https://i.imgur.com/vbpWkFn.png" alt="Icon SIPINTAR" className="w-3.5 h-3.5 object-contain" />
+                    <SipLogo alt="Icon SIPINTAR" className="w-3.5 h-3.5 object-contain" />
                     QUEST MASTER • Petualangan Dimulai, Potensi Teruji!
                   </div>
                   <h1 className="text-xl md:text-2xl font-extrabold leading-snug drop-shadow">
@@ -4551,15 +4600,7 @@ ZGEnLCdEYXNib3InKX0pOwogIG9wZW5HYW1lKCk7Cn0KfSkoKTsKCjwvc2NyaXB0Pgo8L2JvZHk+Cjwv
                   </div>
                 </div>
                 <div className="flex items-center justify-center shrink-0">
-                  <img
-                    src="https://i.imgur.com/vbpWkFn.png"
-                    alt="Ilustrasi Dashboard SIPINTAR"
-                    className="w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40 object-contain drop-shadow-2xl select-none game-float"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = 'https://placehold.co/280x280/1d4ed8/ffffff?text=SIPINTAR';
-                    }}
-                  />
+                  <SipLogo canUpload alt="Ilustrasi Dashboard SIPINTAR" className="w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40 object-contain drop-shadow-2xl select-none game-float" />
                 </div>
               </div>
             </div>
@@ -4857,7 +4898,7 @@ ZGEnLCdEYXNib3InKX0pOwogIG9wZW5HYW1lKCk7Cn0KfSkoKTsKCjwvc2NyaXB0Pgo8L2JvZHk+Cjwv
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-                Manajemen Rombongan Belajar
+                Manajemen Rombongan Belajar (SD / SMP / SMA / SMK)
               </span>
               <h1 className="text-2xl font-extrabold text-slate-800 mt-2">Kelas Saya</h1>
             </div>
@@ -5828,7 +5869,7 @@ ZGEnLCdEYXNib3InKX0pOwogIG9wZW5HYW1lKCk7Cn0KfSkoKTsKCjwvc2NyaXB0Pgo8L2JvZHk+Cjwv
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <label className="block text-xs font-bold uppercase text-slate-600">
-                      Pilihan Jawaban dan Kunci Jawaban
+                      Pilihan Jawaban (A s.d. E) & Penentuan Kunci Jawaban
                     </label>
                     {questionEditor.options.length < 5 && (
                       <button
@@ -6177,7 +6218,7 @@ ZGEnLCdEYXNib3InKX0pOwogIG9wZW5HYW1lKCk7Cn0KfSkoKTsKCjwvc2NyaXB0Pgo8L2JvZHk+Cjwv
         <div className="space-y-6 max-w-4xl">
           <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
             <h1 className="text-2xl font-extrabold text-slate-800">Pengaturan Profil Guru & Sekolah</h1>
-            <p className="text-sm text-slate-500">Kelola identitas pendidik, Data sekolah</p>
+            <p className="text-sm text-slate-500">Kelola identitas pendidik, data sekolah (SD/SMP/SMA/SMK), serta preferensi notifikasi.</p>
           </div>
 
           <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
@@ -6242,7 +6283,8 @@ ZGEnLCdEYXNib3InKX0pOwogIG9wZW5HYW1lKCk7Cn0KfSkoKTsKCjwvc2NyaXB0Pgo8L2JvZHk+Cjwv
           return (
             <div className="min-h-screen flex items-center justify-center p-4">
               <div className="bg-white rounded-3xl shadow-2xl border-4 border-indigo-100 p-6 md:p-8 w-full max-w-md space-y-4 text-center">
-                <div className="text-5xl">{h ? h.game.coverEmoji : '🎮'}</div>
+                <SipLogo alt="Logo SIPINTAR" className="w-28 h-28 object-contain mx-auto drop-shadow-xl select-none" />
+                <div className="text-4xl">{h ? h.game.coverEmoji : ''}</div>
                 <h1 className="text-2xl font-black text-blue-700">{h ? h.game.title : 'SIPINTAR'}</h1>
                 {h && <p className="text-xs text-slate-500">Jenis permainan: <b>{h.game.mode}</b> • Kelas {h.game.className}</p>}
                 {(!remote || remote.status === 'connecting') && <p className="text-sm text-slate-500">Menghubungkan ke ruang guru…</p>}
@@ -6278,7 +6320,7 @@ ZGEnLCdEYXNib3InKX0pOwogIG9wZW5HYW1lKCk7Cn0KfSkoKTsKCjwvc2NyaXB0Pgo8L2JvZHk+Cjwv
           <div className="min-h-screen flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-indigo-100 p-6 md:p-8 w-full max-w-md space-y-4">
               <div className="text-center">
-                <div className="text-5xl">🎮</div>
+                <SipLogo alt="Logo SIPINTAR" className="w-28 h-28 object-contain mx-auto drop-shadow-xl select-none" />
                 <h1 className="text-2xl font-black text-blue-700">SIPINTAR</h1>
                 <p className="text-xs text-slate-500">Pilih permainan dari gurumu, lalu mulai!</p>
               </div>
@@ -6338,21 +6380,12 @@ ZGEnLCdEYXNib3InKX0pOwogIG9wZW5HYW1lKCk7Cn0KfSkoKTsKCjwvc2NyaXB0Pgo8L2JvZHk+Cjwv
           {/* SIDEBAR */}
           <aside className={`fixed md:static inset-y-0 left-0 z-40 w-72 bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white border-r-4 border-indigo-500/40 flex flex-col justify-between transition-transform shadow-2xl ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
             <div>
-              <div className="p-6 border-b border-indigo-800/60 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 border-2 border-yellow-200 shadow-lg flex items-center justify-center p-1.5 shrink-0">
-                    <img src="https://i.imgur.com/vbpWkFn.png" alt="Logo SIPINTAR" className="w-full h-full object-contain" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xl font-black text-amber-400 tracking-wide drop-shadow">SIPINTAR</span>
-                    </div>
-                    <p className="text-[10px] font-semibold text-indigo-200 leading-snug mt-0.5">
-                      Sistem Petualangan Interaktif untuk Penilaian dan Tantangan Asesmen Responsif
-                    </p>
-                  </div>
-                </div>
-                <button onClick={() => setMobileMenuOpen(false)} className="md:hidden text-indigo-200">✕</button>
+              <div className="p-6 pb-7 border-b border-indigo-800/60 relative flex flex-col items-center text-center gap-3">
+                <button onClick={() => setMobileMenuOpen(false)} className="md:hidden absolute top-3 right-3 text-indigo-200">✕</button>
+                <SipLogo canUpload alt="Logo SIPINTAR" className="w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40 object-contain drop-shadow-2xl select-none" />
+                <p className="text-[11px] font-semibold text-indigo-200 leading-snug">
+                  Sistem Petualangan Interaktif untuk Penilaian dan Tantangan Asesmen Responsif
+                </p>
               </div>
 
               <nav className="p-4 space-y-2">
